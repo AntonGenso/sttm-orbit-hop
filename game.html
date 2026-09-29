@@ -34,7 +34,7 @@
     filter:drop-shadow(0 1px 2px rgba(23,29,51,.5))}
   #flash{position:absolute;inset:0;background:#C0473A;opacity:0;pointer-events:none;
     transition:opacity .1s;z-index:5}
-  #tapHint{position:absolute;left:0;right:0;top:56%;z-index:4;text-align:center;
+  #tapHint{position:absolute;left:0;right:0;top:72%;z-index:4;text-align:center;
     pointer-events:none;display:none;animation:tapPulse 1.1s ease-in-out infinite}
   #tapHint .finger{font-size:52px;filter:drop-shadow(0 3px 4px rgba(23,29,51,.45));
     animation:tapDown 1.1s ease-in-out infinite}
@@ -51,8 +51,9 @@
     border-radius:20px;padding:26px 32px;max-width:320px}
   #loseOv h1{font-size:24px;font-weight:900;color:#F5C9A0;letter-spacing:.03em}
   #loseOv .sc{font-size:34px;font-weight:900;color:#FFD35C;margin:10px 0 4px}
-  #loseOv button{margin-top:14px;font-family:inherit;font-size:15px;font-weight:900;color:#171D33;
-    background:#FF7A2E;border:none;padding:11px 26px;border-radius:12px;cursor:pointer}
+  #loseOv button{margin:14px 5px 0;font-family:inherit;font-size:15px;font-weight:900;color:#171D33;
+    background:#FF7A2E;border:none;padding:11px 24px;border-radius:12px;cursor:pointer}
+  #loseOv button.alt{background:rgba(237,231,219,.18);color:#EDE7DB;border:1.5px solid rgba(237,231,219,.5)}
   #startOv{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;
     background:rgba(23,29,51,.55);backdrop-filter:blur(3px)}
   #startOv .box{text-align:center;color:#EDE7DB;background:rgba(23,29,51,.92);border:2px solid #FF7A2E;
@@ -64,7 +65,7 @@
   #loadBar{margin:16px auto 0;width:210px;height:9px;border-radius:6px;background:rgba(237,231,219,.15);overflow:hidden}
   #loadFill{height:100%;width:0%;background:#FF7A2E;transition:width .2s}
   #loadTxt{margin-top:8px;color:#8fa0c8;font-size:12px;letter-spacing:.06em}
-  #homeBtn{position:absolute;top:52px;left:12px;z-index:4;width:38px;height:38px;border-radius:50%;cursor:pointer;
+  #homeBtn{position:absolute;top:52px;right:12px;left:auto;z-index:4;width:38px;height:38px;border-radius:50%;cursor:pointer;
     background:rgba(23,29,51,.78);border:1.5px solid rgba(237,231,219,.25);color:#EDE7DB;font-size:18px}
 </style>
 </head>
@@ -72,9 +73,9 @@
 <div id="sky"></div>
 <div id="flash"></div>
 <div id="hud">
-  <div class="pill" id="starPill">⭐ 0/5</div>
+  <div class="pill" id="starPill">⭐ 0</div>
   <div id="hearts">❤️❤️❤️</div>
-  <div id="protoTag">ПРОТОТИП · ШАГ 1</div>
+  <div id="protoTag">ПРОТОТИП · ШАГ B</div>
   <div id="hint">ТАП — ОТПУСТИТЬ РАКЕТУ</div>
   <div id="toast"></div>
 </div>
@@ -88,6 +89,7 @@
   <h1 id="loseTitle"></h1>
   <div class="sc" id="loseScore"></div>
   <button id="retryBtn"></button>
+  <button id="menuBtn" class="alt"></button>
 </div></div>
 <div id="startOv"><div class="box">
   <h1>ORBIT HOP</h1>
@@ -124,17 +126,17 @@ const I18N = {
        go:"BOSING — BOSHLASH", hint:"BOSING — RAKETANI UCHIRING", loading:"Modellar yuklanmoqda…",
        end:"🌕 Prototip tugadi!", transfers:"parvozlar", tugs:"shataklar", time:"vaqt",
        lose:"Raketa charchadi!", retry:"YANA URINIB KO'R",
-       tapBig:"BOSING!", tapSub:"raketa punktir bo'ylab uchadi" },
+       tapBig:"BOSING!", tapSub:"raketa punktir bo'ylab uchadi", menu:"MENYU" },
   ru:{ desc:"Ракета сама цепляется за орбиту.<br>Тапни в нужный момент — и она полетит по касательной.<br>Собери звёзды, доберись до верхней планеты!",
        go:"ТАП — НАЧАТЬ", hint:"ТАП — ОТПУСТИТЬ РАКЕТУ", loading:"Готовим модели…",
        end:"🌕 Конец прототипа!", transfers:"перелётов", tugs:"буксиров", time:"время",
        lose:"Ракета устала!", retry:"ПОПРОБОВАТЬ ЕЩЁ",
-       tapBig:"ТАПНИ!", tapSub:"ракета полетит по пунктиру" },
+       tapBig:"ТАПНИ!", tapSub:"ракета полетит по пунктиру", menu:"МЕНЮ" },
   en:{ desc:"The rocket grabs orbits by itself.<br>Tap at the right moment — it flies off along the tangent.<br>Collect the stars and reach the top planet!",
        go:"TAP — START", hint:"TAP — RELEASE THE ROCKET", loading:"Loading models…",
        end:"🌕 Prototype complete!", transfers:"transfers", tugs:"tugs", time:"time",
        lose:"Out of hearts!", retry:"TRY AGAIN",
-       tapBig:"TAP!", tapSub:"the rocket flies along the dashed line" },
+       tapBig:"TAP!", tapSub:"the rocket flies along the dashed line", menu:"MENU" },
 };
 const params = new URLSearchParams(window.location.search);
 let LANG = params.get('lang'); if(!I18N[LANG]) LANG='uz';
@@ -148,6 +150,11 @@ document.getElementById('tapBig').textContent = L.tapBig;
 document.getElementById('tapSub').textContent = L.tapSub;
 document.getElementById('retryBtn').textContent = L.retry;
 document.getElementById('retryBtn').addEventListener('click', ()=>location.reload());
+document.getElementById('menuBtn').textContent = L.menu;
+document.getElementById('menuBtn').addEventListener('click', ()=>{
+  const q=new URLSearchParams(); const nk=params.get('nickname'); if(nk)q.set('nickname',nk); q.set('lang',LANG);
+  window.location.href='index.html?'+q.toString();
+});
 document.getElementById('homeBtn').addEventListener('click', ()=>{
   const q=new URLSearchParams(); const nk=params.get('nickname'); if(nk)q.set('nickname',nk); q.set('lang',LANG);
   window.location.href='index.html?'+q.toString();
@@ -166,12 +173,19 @@ const MAP = [
   {x:-2.3, y: 9.6,  pr:0.70, r:1.60, spd:0.78, c:ORANGE, kind:'mars'},
   {x: 1.9, y:14.0,  pr:0.60, r:1.45, spd:0.88, c:TEAL,   kind:'planet-blue'},
   {x:-1.6, y:18.4,  pr:0.55, r:1.30, spd:1.00, c:PEACH,  kind:'planet-orange'},
-  {x: 2.2, y:22.8,  pr:0.50, r:1.15, spd:1.12, c:CREAM,  kind:'planet-purple'},
-  {x:-2.1, y:27.0,  pr:0.45, r:1.05, spd:1.28, c:ORANGE, kind:'planet-navy'},
-  {x: 0.0, y:31.6,  pr:1.00, r:1.90, spd:0.60, c:PEACH,  kind:'moon-uz', finish:true},
+  {x: 2.2, y:22.6,  pr:0.50, r:1.20, spd:1.10, c:CREAM,  kind:'planet-green'},
+  {x:-2.1, y:26.6,  pr:0.48, r:1.12, spd:1.20, c:ORANGE, kind:'planet-purple'},
+  {x: 0.6, y:30.8,  pr:0.80, r:1.55, spd:0.80, c:PEACH,  kind:'jupiter',    hot:6.0},
+  {x:-2.2, y:35.0,  pr:0.55, r:1.25, spd:1.15, c:TEAL,   kind:'planet-violet'},
+  {x: 2.0, y:39.2,  pr:0.70, r:1.50, spd:0.95, c:PEACH,  kind:'saturn-teal', hot:5.0},
+  {x:-1.8, y:43.4,  pr:0.50, r:1.15, spd:1.25, c:CREAM,  kind:'planet-navy'},
+  {x: 1.9, y:47.4,  pr:0.50, r:1.10, spd:1.30, c:ORANGE, kind:'moon',        hot:4.5},
+  {x:-2.0, y:51.2,  pr:0.45, r:1.05, spd:1.35, c:TEAL,   kind:'mars'},
+  {x: 0.0, y:55.6,  pr:1.00, r:1.90, spd:0.60, c:PEACH,  kind:'moon-uz', finish:true},
 ];
-const STARS = [ [1.35,2.7], [-0.45,7.5], [-0.15,11.9], [0.3,16.3], [0.45,20.7] ];
-const MAP_TOP = 31.6;
+const STARS = [ [1.35,2.7], [-0.45,7.5], [-0.15,11.9], [0.3,16.3], [0.45,20.6],
+                [0.2,24.7], [-0.9,28.9], [-0.8,33.0], [0.15,37.3], [0.05,49.4] ];
+const MAP_TOP = 55.6;
 
 /* ---------- Рендер: орто-камера, прозрачный канвас ---------- */
 const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
@@ -215,7 +229,8 @@ const texLoader = new THREE.TextureLoader();
 const TPL = {};  // key -> {tex, ar}
 const ASSET_KEYS = ['rocket','flame','earth','saturn-tan','mars','planet-blue','planet-orange',
                     'planet-purple','planet-navy','moon','moon-uz','jupiter','saturn-teal','star','comet','dot',
-                    'tug','cloud-navy','cloud-teal','cloud-cream','planet-violet','planet-green'];
+                    'tug','cloud-navy','cloud-teal','cloud-cream','planet-violet','planet-green',
+                    'comet-orange','comet-teal','comet-purple','comet-green','comet-red','comet-blue'];
 const ROCKET_TILT = 0.428;      // наклон ракеты в спрайте (24.5°), компенсация курса
 const ROCKET_SPR_OFS = -0.30;   // тело ракеты в верхней части общего холста с пламенем
 
@@ -250,8 +265,8 @@ function buildAmbient(){
   clouds.forEach((c,i)=>{
     const s = spritePlane(c[0], c[3], 0);
     if (!s) return;
-    s.position.set(c[1], c[2], -1.1 - i*0.02);
-    s.material.opacity = 0.96;
+    s.position.set(c[1], c[2], -1.7 - i*0.02);
+    s.material.opacity = 0.42; // фон, не препятствие
     scene.add(s);
   });
   if (TPL['tug']){
@@ -260,13 +275,62 @@ function buildAmbient(){
     scene.add(tugSpr);
   }
   if (TPL['dot']) for(let i=0;i<12;i++){
-    const s=spritePlane('dot', 0.16+Math.random()*0.15, 0);
-    s.position.set((Math.random()*2-1)*4.6, 1.5+Math.random()*29, -0.8);
-    s.material.opacity=0.85; scene.add(s);
+    const s=spritePlane('dot', 0.10+Math.random()*0.10, 0);
+    s.position.set((Math.random()*2-1)*4.6, 1.5+Math.random()*(MAP_TOP-3), -1.4);
+    s.material.opacity=0.45; scene.add(s);
   }
   if (TPL['comet']){
     const c=spritePlane('comet', 1.5, 0);
     c.position.set(-3.1, 25.5, -0.9); c.material.opacity=0.9; scene.add(c);
+  }
+}
+
+/* ---------- Частицы: бумажные звёздочки-конфетти ---------- */
+function makeCanvasTex(draw, size){
+  const c=document.createElement('canvas'); c.width=c.height=size||64;
+  draw(c.getContext('2d'), size||64);
+  return new THREE.CanvasTexture(c);
+}
+const partTex = makeCanvasTex((ctx,s)=>{
+  ctx.fillStyle='#fff'; ctx.translate(s/2,s/2);
+  ctx.beginPath();
+  for(let i=0;i<8;i++){ const r=(i%2? s*0.16 : s*0.46), a=i*Math.PI/4;
+    ctx.lineTo(Math.cos(a)*r, Math.sin(a)*r); }
+  ctx.closePath(); ctx.fill();
+}, 64);
+const glowTex = makeCanvasTex((ctx,s)=>{
+  const g2=ctx.createRadialGradient(s/2,s/2,2,s/2,s/2,s/2);
+  g2.addColorStop(0,'rgba(255,255,255,1)'); g2.addColorStop(0.4,'rgba(255,255,255,0.5)');
+  g2.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=g2; ctx.fillRect(0,0,s,s);
+}, 128);
+const COL_GOLD  = ['#FFD35C','#FF7A2E','#F5C9A0'];
+const COL_HIT   = ['#C0473A','#FF7A2E','#F2E9D5'];
+const COL_MULTI = ['#FF7A2E','#5E8E9E','#C0473A','#FFD35C','#9A6BC9','#54B06A'];
+const PARTS=[];
+function burst(x, y, colors, n){
+  n = n||12;
+  for(let i=0;i<n;i++){
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(0.24,0.24),
+      new THREE.MeshBasicMaterial({map:partTex, transparent:true, depthWrite:false,
+        color:new THREE.Color(colors[i%colors.length])}));
+    m.position.set(x,y,0.5);
+    m.rotation.z=Math.random()*6.28;
+    m.renderOrder=6;
+    scene.add(m);
+    const a=Math.random()*6.28, sp=1.6+Math.random()*2.4;
+    PARTS.push({m, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp+1.1, vr:(Math.random()*2-1)*5, life:0.9+Math.random()*0.3});
+  }
+}
+function updateParts(dt){
+  for(let i=PARTS.length-1;i>=0;i--){
+    const p=PARTS[i];
+    p.life-=dt;
+    if(p.life<=0){ scene.remove(p.m); PARTS.splice(i,1); continue; }
+    p.vy-=3.2*dt;
+    p.m.position.x+=p.vx*dt; p.m.position.y+=p.vy*dt;
+    p.m.rotation.z+=p.vr*dt;
+    p.m.material.opacity=Math.min(1, p.life/0.45);
   }
 }
 
@@ -294,7 +358,7 @@ function buildPlanets(){
       addOutline(ball, INK, 1.06);
       g.add(ball);
     }
-    g.add(ringLine(p.r, ORANGE));
+    const ring = ringLine(p.r, ORANGE); g.add(ring); p.ring = ring;
     scene.add(g);
     p.grp=g;
   });
@@ -304,15 +368,21 @@ function buildPlanets(){
 const starObjs=[];
 function buildStars(){
   STARS.forEach((s,i)=>{
-    let m = spritePlane('star', 0.7, 2);
+    const grp = new THREE.Group();
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(1.5,1.5),
+      new THREE.MeshBasicMaterial({map:glowTex, transparent:true, depthWrite:false,
+        blending:THREE.AdditiveBlending, color:new THREE.Color('#FFB23D'), opacity:0.85}));
+    glow.position.z=-0.05; grp.add(glow);
+    let m = spritePlane('star', 0.72, 2);
     if (!m){
       m=new THREE.Mesh(new THREE.OctahedronGeometry(0.3,0), toonMat('#FFF4DC'));
       m.scale.z=0.55;
       addOutline(m, ORANGE, 1.16);
     }
-    m.position.set(s[0], s[1], 0);
-    scene.add(m);
-    starObjs.push({m, x:s[0], y:s[1], taken:false, i, baseS:m.scale.x});
+    grp.add(m);
+    grp.position.set(s[0], s[1], 0);
+    scene.add(grp);
+    starObjs.push({m:grp, x:s[0], y:s[1], taken:false, i, baseS:1});
   });
 }
 
@@ -366,6 +436,7 @@ const S = {
   tugFrom:new THREE.Vector3(), tugT:0,
   stars:0, releases:0, tugs:0, t0:0, finished:false, started:false,
   hearts:3, inv:0, over:false, tapped:false,
+  hotT:0, swT:0, swFrom:new THREE.Vector3(),
 };
 const comets=[]; let cometT=6.0;
 function orbitPos(p, a){ return new THREE.Vector3(p.x+Math.cos(a)*p.r, p.y+Math.sin(a)*p.r, 0); }
@@ -379,6 +450,7 @@ function release(){
   const tx=-Math.sin(S.angle)*S.dir, ty=Math.cos(S.angle)*S.dir;
   S.pos.copy(orbitPos(p,S.angle));
   S.vel.set(tx*FLY_SPEED, ty*FLY_SPEED, 0);
+  resetHot(p);
   S.mode='fly'; S.flyT=0; S.recapture=RECAPTURE_T; S.lastPlanet=p;
   S.releases++;
 }
@@ -386,6 +458,7 @@ let assetsReady=false;
 function startGame(){
   if (S.started || !assetsReady) return;
   S.started=true; S.t0=performance.now(); heartsHUD();
+  document.getElementById('starPill').textContent='⭐ 0/'+STARS.length;
   document.getElementById('tapHint').style.display='block';
   document.getElementById('startOv').style.display='none';
 }
@@ -414,19 +487,25 @@ function flashFx(){ const f=document.getElementById('flash'); f.style.opacity=0.
 function hitRocket(){
   if (S.inv>0 || S.over) return;
   S.hearts--; S.inv=1.6; heartsHUD(); flashFx();
+  burst(S.pos.x, S.pos.y, COL_HIT, 12);
   if (S.hearts<=0){
     S.over=true;
     score = S.stars*5;
     try{ window.parent.postMessage({type:'SUBMIT_SCORE', score:score},'*'); }catch(e){}
-    document.getElementById('loseScore').textContent = '⭐ '+S.stars+'/5';
+    document.getElementById('loseScore').textContent = '⭐ '+S.stars+'/'+STARS.length;
     setTimeout(()=>{ document.getElementById('loseOv').style.display='flex'; }, 500);
     return;
   }
-  if (S.mode==='fly'){ // сбит в полёте — буксир спасает бесплатно
-    S.mode='tug'; S.tugT=0; S.tugFrom.copy(S.pos); S.tugs++;
-    const p=S.planet;
-    S.angle=Math.atan2(S.pos.y-p.y, S.pos.x-p.x);
-  }
+  if (S.mode==='fly') startTug(); // сбит в полёте — буксир возвращает
+}
+function resetHot(p){
+  if (p && p.hot && p.ring){ p.ring.material.color.set(ORANGE); p.ring.material.opacity=0.9; }
+  S.hotT=0;
+}
+function startTug(){
+  S.mode='tug'; S.tugT=0; S.tugFrom.copy(S.pos); S.tugs++;
+  const p=S.planet;
+  S.angle=Math.atan2(S.pos.y-p.y, S.pos.x-p.x);
 }
 /* -------- кометы-помехи: телеграф пунктиром, затем пролёт -------- */
 function spawnComet(){
@@ -435,8 +514,13 @@ function spawnComet(){
   const x0 = -dir*(HALF_W+1.6);
   const vx = dir*(3.0+Math.random()*1.3);
   const vy = (Math.random()*1.2-0.7);
-  const spr = spritePlane('comet', 0.9, 3);
-  if (spr){ if (dir<0) spr.scale.x*=-1; spr.visible=false; scene.add(spr); }
+  const kinds=['comet-orange','comet-teal','comet-purple','comet-green','comet-red','comet-blue'].filter(k=>TPL[k]);
+  const key = kinds.length ? kinds[Math.floor(Math.random()*kinds.length)] : 'comet';
+  const spr = spritePlane(key, 1.05, 3);
+  if (spr){
+    if (vx>0) spr.scale.x*=-1;                 // в листе кометы летят влево
+    spr.visible=false; scene.add(spr);
+  }
   const pts=[new THREE.Vector3(x0,y0,0.2), new THREE.Vector3(x0+vx*4.5, y0+vy*4.5, 0.2)];
   const lgeo=new THREE.BufferGeometry().setFromPoints(pts);
   const line=new THREE.Line(lgeo, new THREE.LineDashedMaterial({color:new THREE.Color('#C0473A'),
@@ -458,7 +542,10 @@ function updateComets(dt, et){
       continue;
     }
     c.x+=c.vx*dt; c.y+=c.vy*dt;
-    if (c.spr){ c.spr.position.set(c.x,c.y,0.2); c.spr.rotation.z=Math.atan2(c.vy,c.vx*(c.vx<0?-1:1))*(c.vx<0?-1:1); }
+    if (c.spr){
+      c.spr.position.set(c.x,c.y,0.2);
+      c.spr.rotation.z = c.vx>0 ? Math.atan2(c.vy,c.vx) : Math.atan2(c.vy,c.vx)-Math.PI;
+    }
     if (Math.hypot(c.x-S.pos.x, c.y-S.pos.y) < 0.62) hitRocket();
     if (Math.abs(c.x)>HALF_W+2.5 || Math.abs(c.y-camY)>halfH+4){
       if (c.spr) scene.remove(c.spr);
@@ -480,7 +567,7 @@ function tryCapture(){
     const d=Math.hypot(dx,dy);
     if (Math.abs(d-p.r) < CAPTURE_BAND){
       /* пересекли кольцо — цепляемся, сохраняя направление обхода */
-      S.mode='orbit'; S.planet=p;
+      S.mode='orbit'; S.planet=p; S.hotT=0;
       S.angle=Math.atan2(dy,dx);
       const cross = dx*S.vel.y - dy*S.vel.x;
       S.dir = cross>=0 ? 1 : -1;
@@ -489,7 +576,7 @@ function tryCapture(){
         score = S.stars*5;
         try{ window.parent.postMessage({type:'SUBMIT_SCORE', score:score},'*'); }catch(e){} // финальный сабмит
         const secs=Math.round((performance.now()-S.t0)/1000);
-        toast(L.end+'<br>⭐ '+S.stars+'/5 · '+L.transfers+': '+S.releases+' · '+L.tugs+': '+S.tugs+'<br>'+L.time+': '+secs+' s', 6000);
+        toast(L.end+'<br>⭐ '+S.stars+'/'+STARS.length+' · '+L.transfers+': '+S.releases+' · '+L.tugs+': '+S.tugs+'<br>'+L.time+': '+secs+' s', 6000);
       }
       return true;
     }
@@ -505,6 +592,7 @@ function tick(t){
   const et=t/1000;
 
   updateComets(dt, et);
+  updateParts(dt);
   if (S.inv>0){ S.inv-=dt; rocket.visible = Math.floor(et*13)%2===0; } else rocket.visible=true;
   if (S.started && !S.over && !document.hidden){
     if (S.mode==='orbit'){
@@ -512,6 +600,33 @@ function tick(t){
       S.angle += p.spd*S.dir*dt;
       S.pos.copy(orbitPos(p,S.angle));
       if (S.recapture>0) S.recapture-=dt;
+      if (p.hot){
+        S.hotT += dt;
+        const k=Math.min(1, S.hotT/p.hot);
+        p.ring.material.color.set(ORANGE).lerp(new THREE.Color('#C0473A'), k);
+        p.ring.material.opacity = 0.9 - 0.25*k*Math.abs(Math.sin(et*(3+9*k)));
+        if (k>=1){ /* планета поглощает ракету */
+          S.mode='swallow'; S.swT=0; S.swFrom.copy(S.pos);
+          burst(p.x, p.y, COL_MULTI, 16);
+        }
+      }
+    }
+    else if (S.mode==='swallow'){
+      S.swT+=dt;
+      const p=S.planet;
+      const k=Math.min(1, S.swT/0.55), ease=k*k*(3-2*k);
+      S.pos.lerpVectors(S.swFrom, new THREE.Vector3(p.x,p.y,0), ease);
+      rocket.scale.setScalar(1-0.85*ease);
+      if (k>=1){
+        rocket.scale.setScalar(1);
+        resetHot(p);
+        hitRocket();
+        if (!S.over){
+          S.mode='orbit';
+          S.pos.copy(orbitPos(p,S.angle));
+          burst(S.pos.x, S.pos.y, COL_MULTI, 8);
+        }
+      }
     }
     else if (S.mode==='fly'){
       S.flyT+=dt;
@@ -520,10 +635,8 @@ function tick(t){
       if (!tryCapture()){
         const off = Math.abs(S.pos.x)>HALF_W+1.2 || S.pos.y<camY-halfH-1.5 || S.pos.y>MAP_TOP+4;
         if (S.flyT>TUG_AFTER || off){
-          /* буксир: мягкий возврат на последнюю орбиту */
-          S.mode='tug'; S.tugT=0; S.tugFrom.copy(S.pos); S.tugs++;
-          const p=S.planet;
-          S.angle=Math.atan2(S.pos.y-p.y, S.pos.x-p.x); /* ближайшая точка кольца */
+          if (off) hitRocket();              /* вылет за экран — −1 ❤️ */
+          if (!S.over && S.mode==='fly') startTug();
         }
       }
     }
@@ -537,7 +650,7 @@ function tick(t){
       const ease=k*k*(3-2*k);
       const target=orbitPos(S.planet,S.angle);
       S.pos.lerpVectors(S.tugFrom, target, ease);
-      if (k>=1){ S.mode='orbit'; S.recapture=0; if(tugSpr) tugSpr.visible=false; }
+      if (k>=1){ S.mode='orbit'; S.recapture=0; S.hotT=0; if(tugSpr) tugSpr.visible=false; }
     }
 
     /* лёгкое вращение glb-планет */
@@ -546,12 +659,13 @@ function tick(t){
     /* звёзды */
     for (const st of starObjs){
       if (st.taken) continue;
-      const ps=st.baseS*(1+0.14*Math.sin(et*4+st.i)); st.m.scale.set(ps,ps,st.m.scale.z);
+      const ps=st.baseS*(1+0.22*Math.sin(et*4.5+st.i)); st.m.scale.set(ps,ps,st.m.scale.z);
       st.m.rotation.z += dt*1.2;
       if (Math.hypot(S.pos.x-st.x, S.pos.y-st.y) < 0.55){
         st.taken=true; st.m.visible=false;
+        burst(st.x, st.y, COL_GOLD, 10);
         S.stars++; score=S.stars*5;
-        document.getElementById('starPill').textContent='⭐ '+S.stars+'/5';
+        document.getElementById('starPill').textContent='⭐ '+S.stars+'/'+STARS.length;
         submitScore(); /* накопительно после каждой звезды — по документу STTM */
       }
     }
