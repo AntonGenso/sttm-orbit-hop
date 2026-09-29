@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ORBIT HOP — прототип механики</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{height:100%;overflow:hidden;background:#0d1226}
+  body{height:100%;width:100%;max-width:480px;margin:0 auto;overflow:hidden;position:relative;
+    font-family:'Segoe UI',Arial,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none;
+    transform:translateZ(0);box-shadow:0 0 60px rgba(0,0,0,.8);background:#EDE7DB}
+  /* фон-градиент высоты: снизу кремовое небо, сверху чернильный космос */
+  #sky{position:absolute;left:0;right:0;top:0;height:400%;z-index:0;will-change:transform;
+    background:linear-gradient(to bottom,#171D33 0%,#2E3A5C 30%,#5E8E9E 52%,#F5C9A0 74%,#EDE7DB 100%)}
+  canvas{position:relative;z-index:1;display:block}
+  /* бумажное зерно */
+  #grain{position:absolute;inset:0;z-index:3;pointer-events:none;opacity:.07;mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E")}
+  #hud{position:absolute;inset:0;z-index:4;pointer-events:none}
+  .pill{position:absolute;top:12px;left:12px;background:rgba(23,29,51,.78);color:#EDE7DB;
+    border:1.5px solid rgba(237,231,219,.25);border-radius:14px;padding:7px 14px;font-weight:800;font-size:15px}
+  #protoTag{position:absolute;top:12px;right:12px;background:rgba(255,122,46,.9);color:#171D33;
+    border-radius:12px;padding:5px 11px;font-weight:900;font-size:11px;letter-spacing:.08em}
+  #hint{position:absolute;bottom:22px;left:0;right:0;text-align:center;color:#171D33;font-weight:700;
+    font-size:13px;letter-spacing:.05em;opacity:.75;transition:color .6s}
+  #hint.space{color:#EDE7DB}
+  #toast{position:absolute;top:26%;left:50%;transform:translateX(-50%) scale(.85);opacity:0;z-index:4;
+    background:rgba(23,29,51,.9);border:2px solid #FF7A2E;color:#EDE7DB;font-size:16px;font-weight:800;
+    padding:12px 20px;border-radius:14px;transition:all .35s;text-align:center;line-height:1.5;white-space:nowrap}
+  #toast.show{opacity:1;transform:translateX(-50%) scale(1)}
+  #hearts{position:absolute;top:52px;left:12px;font-size:17px;letter-spacing:2px;
+    filter:drop-shadow(0 1px 2px rgba(23,29,51,.5))}
+  #flash{position:absolute;inset:0;background:#C0473A;opacity:0;pointer-events:none;
+    transition:opacity .1s;z-index:5}
+  #tapHint{position:absolute;left:0;right:0;top:56%;z-index:4;text-align:center;
+    pointer-events:none;display:none;animation:tapPulse 1.1s ease-in-out infinite}
+  #tapHint .finger{font-size:52px;filter:drop-shadow(0 3px 4px rgba(23,29,51,.45));
+    animation:tapDown 1.1s ease-in-out infinite}
+  #tapHint .big{font-size:30px;font-weight:900;letter-spacing:.08em;color:#171D33;margin-top:2px;
+    text-shadow:0 2px 0 rgba(237,231,219,.8), 0 0 20px rgba(255,122,46,.45)}
+  #tapHint .small{font-size:14px;font-weight:700;color:#171D33;opacity:.75;margin-top:4px}
+  #tapHint.space .big{color:#EDE7DB;text-shadow:0 2px 0 rgba(23,29,51,.7)}
+  #tapHint.space .small{color:#EDE7DB}
+  @keyframes tapPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+  @keyframes tapDown{0%,100%{transform:translateY(0)}50%{transform:translateY(9px)}}
+  #loseOv{position:absolute;inset:0;z-index:7;display:none;align-items:center;justify-content:center;
+    background:rgba(23,29,51,.6);backdrop-filter:blur(3px)}
+  #loseOv .box{text-align:center;color:#EDE7DB;background:rgba(23,29,51,.94);border:2px solid #C0473A;
+    border-radius:20px;padding:26px 32px;max-width:320px}
+  #loseOv h1{font-size:24px;font-weight:900;color:#F5C9A0;letter-spacing:.03em}
+  #loseOv .sc{font-size:34px;font-weight:900;color:#FFD35C;margin:10px 0 4px}
+  #loseOv button{margin-top:14px;font-family:inherit;font-size:15px;font-weight:900;color:#171D33;
+    background:#FF7A2E;border:none;padding:11px 26px;border-radius:12px;cursor:pointer}
+  #startOv{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;
+    background:rgba(23,29,51,.55);backdrop-filter:blur(3px)}
+  #startOv .box{text-align:center;color:#EDE7DB;background:rgba(23,29,51,.92);border:2px solid #FF7A2E;
+    border-radius:20px;padding:26px 30px;max-width:320px}
+  #startOv h1{font-size:30px;font-weight:900;color:#FF7A2E;letter-spacing:.04em}
+  #startOv p{margin-top:10px;font-size:14px;line-height:1.6;color:#c9d0e6}
+  #startOv .go{margin-top:16px;font-size:15px;font-weight:900;color:#171D33;background:#FF7A2E;
+    display:inline-block;padding:10px 26px;border-radius:12px}
+  #loadBar{margin:16px auto 0;width:210px;height:9px;border-radius:6px;background:rgba(237,231,219,.15);overflow:hidden}
+  #loadFill{height:100%;width:0%;background:#FF7A2E;transition:width .2s}
+  #loadTxt{margin-top:8px;color:#8fa0c8;font-size:12px;letter-spacing:.06em}
+  #homeBtn{position:absolute;top:52px;left:12px;z-index:4;width:38px;height:38px;border-radius:50%;cursor:pointer;
+    background:rgba(23,29,51,.78);border:1.5px solid rgba(237,231,219,.25);color:#EDE7DB;font-size:18px}
+</style>
+</head>
+<body>
+<div id="sky"></div>
+<div id="flash"></div>
+<div id="hud">
+  <div class="pill" id="starPill">⭐ 0/5</div>
+  <div id="hearts">❤️❤️❤️</div>
+  <div id="protoTag">ПРОТОТИП · ШАГ 1</div>
+  <div id="hint">ТАП — ОТПУСТИТЬ РАКЕТУ</div>
+  <div id="toast"></div>
+</div>
+<div id="grain"></div>
+<div id="tapHint">
+  <div class="finger">👆</div>
+  <div class="big" id="tapBig"></div>
+  <div class="small" id="tapSub"></div>
+</div>
+<div id="loseOv"><div class="box">
+  <h1 id="loseTitle"></h1>
+  <div class="sc" id="loseScore"></div>
+  <button id="retryBtn"></button>
+</div></div>
+<div id="startOv"><div class="box">
+  <h1>ORBIT HOP</h1>
+  <p id="ovDesc"></p>
+  <div id="loadBar"><div id="loadFill"></div></div>
+  <div id="loadTxt"></div>
+  <div class="go" id="ovGo" style="display:none"></div>
+</div></div>
+<button id="homeBtn">⌂</button>
+
+<script>
+'use strict';
+/* =========================================================
+   ORBIT HOP — ШАГ 1: прототип механики
+   Цель: почувствовать захват/отпускание/буксир. Всё тюнится
+   в блоке КОНСТАНТЫ ниже.
+   ========================================================= */
+
+/* ---------- КОНСТАНТЫ ДЛЯ ТЮНИНГА ---------- */
+const FLY_SPEED    = 4.6;   // скорость полёта по касательной (юнит/с)
+const CAPTURE_BAND = 0.55;  // насколько «толстое» кольцо захвата
+const PREVIEW_LEN  = 4.6;   // длина пунктира-предпросмотра
+const TUG_AFTER    = 2.6;   // секунд дрейфа мимо всего до буксира
+const TUG_TIME     = 0.7;   // длительность возврата буксиром
+const RECAPTURE_T  = 0.45;  // защита от повторного захвата той же орбиты
+const CAM_LERP     = 3.2;   // плавность камеры
+
+/* ---------- Палитра ---------- */
+const INK='#171D33', CREAM='#EDE7DB', ORANGE='#FF7A2E', PEACH='#F5C9A0', TEAL='#5E8E9E';
+
+/* ---------- Языки ---------- */
+const I18N = {
+  uz:{ desc:"Raketa orbitaga o'zi ilashadi.<br>Bosing — u urinma bo'ylab uchadi.<br>Yulduzlarni yig'ib, tepadagi sayyoragacha yetib bor!",
+       go:"BOSING — BOSHLASH", hint:"BOSING — RAKETANI UCHIRING", loading:"Modellar yuklanmoqda…",
+       end:"🌕 Prototip tugadi!", transfers:"parvozlar", tugs:"shataklar", time:"vaqt",
+       lose:"Raketa charchadi!", retry:"YANA URINIB KO'R",
+       tapBig:"BOSING!", tapSub:"raketa punktir bo'ylab uchadi" },
+  ru:{ desc:"Ракета сама цепляется за орбиту.<br>Тапни в нужный момент — и она полетит по касательной.<br>Собери звёзды, доберись до верхней планеты!",
+       go:"ТАП — НАЧАТЬ", hint:"ТАП — ОТПУСТИТЬ РАКЕТУ", loading:"Готовим модели…",
+       end:"🌕 Конец прототипа!", transfers:"перелётов", tugs:"буксиров", time:"время",
+       lose:"Ракета устала!", retry:"ПОПРОБОВАТЬ ЕЩЁ",
+       tapBig:"ТАПНИ!", tapSub:"ракета полетит по пунктиру" },
+  en:{ desc:"The rocket grabs orbits by itself.<br>Tap at the right moment — it flies off along the tangent.<br>Collect the stars and reach the top planet!",
+       go:"TAP — START", hint:"TAP — RELEASE THE ROCKET", loading:"Loading models…",
+       end:"🌕 Prototype complete!", transfers:"transfers", tugs:"tugs", time:"time",
+       lose:"Out of hearts!", retry:"TRY AGAIN",
+       tapBig:"TAP!", tapSub:"the rocket flies along the dashed line" },
+};
+const params = new URLSearchParams(window.location.search);
+let LANG = params.get('lang'); if(!I18N[LANG]) LANG='uz';
+const L = I18N[LANG];
+document.getElementById('ovDesc').innerHTML = L.desc;
+document.getElementById('ovGo').textContent = L.go;
+document.getElementById('hint').textContent = L.hint;
+document.getElementById('loadTxt').textContent = L.loading;
+document.getElementById('loseTitle').textContent = L.lose;
+document.getElementById('tapBig').textContent = L.tapBig;
+document.getElementById('tapSub').textContent = L.tapSub;
+document.getElementById('retryBtn').textContent = L.retry;
+document.getElementById('retryBtn').addEventListener('click', ()=>location.reload());
+document.getElementById('homeBtn').addEventListener('click', ()=>{
+  const q=new URLSearchParams(); const nk=params.get('nickname'); if(nk)q.set('nickname',nk); q.set('lang',LANG);
+  window.location.href='index.html?'+q.toString();
+});
+
+/* ---------- STTM (по документу интеграции) ---------- */
+const nickname = params.get('nickname') || 'Player';
+let score = 0;
+function submitScore(){ try{ window.parent.postMessage({ type:'SUBMIT_SCORE', score:score }, '*'); }catch(e){} }
+
+/* ---------- Карта прототипа: 8 орбит, 5 звёзд ---------- */
+/* x,y — центр; pr — радиус планеты; r — радиус орбиты; spd — рад/с */
+const MAP = [
+  {x: 0.0, y: 0.0,  pr:1.10, r:2.20, spd:0.55, c:TEAL,   kind:'earth'},
+  {x: 2.1, y: 5.0,  pr:0.85, r:1.80, spd:0.65, c:PEACH,  kind:'saturn-tan'},
+  {x:-2.3, y: 9.6,  pr:0.70, r:1.60, spd:0.78, c:ORANGE, kind:'mars'},
+  {x: 1.9, y:14.0,  pr:0.60, r:1.45, spd:0.88, c:TEAL,   kind:'planet-blue'},
+  {x:-1.6, y:18.4,  pr:0.55, r:1.30, spd:1.00, c:PEACH,  kind:'planet-orange'},
+  {x: 2.2, y:22.8,  pr:0.50, r:1.15, spd:1.12, c:CREAM,  kind:'planet-purple'},
+  {x:-2.1, y:27.0,  pr:0.45, r:1.05, spd:1.28, c:ORANGE, kind:'planet-navy'},
+  {x: 0.0, y:31.6,  pr:1.00, r:1.90, spd:0.60, c:PEACH,  kind:'moon-uz', finish:true},
+];
+const STARS = [ [1.35,2.7], [-0.45,7.5], [-0.15,11.9], [0.3,16.3], [0.45,20.7] ];
+const MAP_TOP = 31.6;
+
+/* ---------- Рендер: орто-камера, прозрачный канвас ---------- */
+const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const HALF_W = 5.2;
+let halfH = 8;
+const camera = new THREE.OrthographicCamera(-HALF_W, HALF_W, halfH, -halfH, 0.1, 100);
+camera.position.z = 20;
+function resize(){
+  const w=document.body.clientWidth, h=document.body.clientHeight;
+  halfH = HALF_W * h/w;
+  camera.top = halfH; camera.bottom = -halfH;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w,h);
+}
+window.addEventListener('resize', resize); resize();
+
+/* свет для toon */
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const sun = new THREE.DirectionalLight(0xffffff, 0.85); sun.position.set(3,5,8); scene.add(sun);
+
+/* ---------- Аниме-материалы: toon + чернильная обводка ---------- */
+const gradMap = new THREE.DataTexture(new Uint8Array([90,170,255]), 3, 1, THREE.LuminanceFormat);
+gradMap.needsUpdate = true; gradMap.minFilter = gradMap.magFilter = THREE.NearestFilter;
+function toonMat(hex){ return new THREE.MeshToonMaterial({color:new THREE.Color(hex), gradientMap:gradMap}); }
+function addOutline(mesh, hex, k){
+  const hull = new THREE.Mesh(mesh.geometry, new THREE.MeshBasicMaterial({color:new THREE.Color(hex||INK), side:THREE.BackSide}));
+  hull.scale.setScalar(k||1.07);
+  mesh.add(hull);
+  return hull;
+}
+
+/* =========================================================
+   АССЕТ-СИСТЕМА: бумажные спрайты assets/<имя>.webp.
+   Файл есть — спрайт в игре; нет — процедурная заглушка.
+   ========================================================= */
+const texLoader = new THREE.TextureLoader();
+const TPL = {};  // key -> {tex, ar}
+const ASSET_KEYS = ['rocket','flame','earth','saturn-tan','mars','planet-blue','planet-orange',
+                    'planet-purple','planet-navy','moon','moon-uz','jupiter','saturn-teal','star','comet','dot',
+                    'tug','cloud-navy','cloud-teal','cloud-cream','planet-violet','planet-green'];
+const ROCKET_TILT = 0.428;      // наклон ракеты в спрайте (24.5°), компенсация курса
+const ROCKET_SPR_OFS = -0.30;   // тело ракеты в верхней части общего холста с пламенем
+
+function spritePlane(key, hUnits, order){
+  const t = TPL[key]; if (!t) return null;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(hUnits*t.ar, hUnits),
+    new THREE.MeshBasicMaterial({map:t.tex, transparent:true, depthWrite:false}));
+  m.renderOrder = order||0;
+  return m;
+}
+function loadAssets(done){
+  let n=0; const total=ASSET_KEYS.length;
+  const fill=document.getElementById('loadFill'), txt=document.getElementById('loadTxt');
+  const step=(key,how)=>{
+    n++; fill.style.width=(n/total*100).toFixed(0)+'%';
+    txt.textContent = L.loading+' '+n+'/'+total+(how==='ok'?' · '+key+' ✓':'');
+    if(n===total) setTimeout(done,200);
+  };
+  ASSET_KEYS.forEach(key=>{
+    texLoader.load('assets/'+key+'.webp',
+      (tex)=>{ tex.encoding=THREE.sRGBEncoding; tex.anisotropy=4;
+               TPL[key]={tex, ar: tex.image.width/tex.image.height}; step(key,'ok'); },
+      undefined,
+      ()=>{ TPL[key]=null; step(key,'ph'); });
+  });
+}
+let tugSpr = null;
+function buildAmbient(){
+  const clouds = [ ['cloud-cream', 0.4, 2.6, 1.05], ['cloud-cream', -1.9, 4.7, 0.72],
+                   ['cloud-teal', -0.6, 6.9, 1.0], ['cloud-teal', 1.7, 9.0, 0.7],
+                   ['cloud-navy', 0.5, 11.6, 1.05] ];
+  clouds.forEach((c,i)=>{
+    const s = spritePlane(c[0], c[3], 0);
+    if (!s) return;
+    s.position.set(c[1], c[2], -1.1 - i*0.02);
+    s.material.opacity = 0.96;
+    scene.add(s);
+  });
+  if (TPL['tug']){
+    tugSpr = spritePlane('tug', 1.0, 4);
+    tugSpr.visible = false;
+    scene.add(tugSpr);
+  }
+  if (TPL['dot']) for(let i=0;i<12;i++){
+    const s=spritePlane('dot', 0.16+Math.random()*0.15, 0);
+    s.position.set((Math.random()*2-1)*4.6, 1.5+Math.random()*29, -0.8);
+    s.material.opacity=0.85; scene.add(s);
+  }
+  if (TPL['comet']){
+    const c=spritePlane('comet', 1.5, 0);
+    c.position.set(-3.1, 25.5, -0.9); c.material.opacity=0.9; scene.add(c);
+  }
+}
+
+/* ---------- Планеты и орбиты ---------- */
+function ringLine(r, hex, segs){
+  const pts=[]; const n=segs||72;
+  for(let i=0;i<n;i++){ const a=i/n*Math.PI*2; pts.push(new THREE.Vector3(Math.cos(a)*r, Math.sin(a)*r, 0)); }
+  const geo=new THREE.BufferGeometry().setFromPoints(pts);
+  return new THREE.LineLoop(geo, new THREE.LineBasicMaterial({color:new THREE.Color(hex), transparent:true, opacity:0.9}));
+}
+function buildPlanets(){
+  MAP.forEach(p=>{
+    const g=new THREE.Group(); g.position.set(p.x,p.y,0);
+    let spr;
+    if (p.kind==='moon-uz'){
+      spr = spritePlane('moon-uz', p.pr*2.78, 1);       // шар = pr*2, флаг выше
+      if (spr) spr.position.y = p.pr*2.78*0.16;
+    } else {
+      spr = spritePlane(p.kind, p.pr*2*1.12, 1);
+      if (spr && p.kind.indexOf('saturn')<0){ spr.rotation.z=Math.random()*Math.PI*2; p.spin=spr; }
+    }
+    if (spr) g.add(spr);
+    else {
+      const ball=new THREE.Mesh(new THREE.SphereGeometry(p.pr, 26, 20), toonMat(p.c));
+      addOutline(ball, INK, 1.06);
+      g.add(ball);
+    }
+    g.add(ringLine(p.r, ORANGE));
+    scene.add(g);
+    p.grp=g;
+  });
+}
+
+/* ---------- Звёзды ---------- */
+const starObjs=[];
+function buildStars(){
+  STARS.forEach((s,i)=>{
+    let m = spritePlane('star', 0.7, 2);
+    if (!m){
+      m=new THREE.Mesh(new THREE.OctahedronGeometry(0.3,0), toonMat('#FFF4DC'));
+      m.scale.z=0.55;
+      addOutline(m, ORANGE, 1.16);
+    }
+    m.position.set(s[0], s[1], 0);
+    scene.add(m);
+    starObjs.push({m, x:s[0], y:s[1], taken:false, i, baseS:m.scale.x});
+  });
+}
+
+/* ---------- Ракета (заглушка в стиле) ---------- */
+const rocket = new THREE.Group();
+function buildRocket(){
+  if (TPL['rocket']){
+    const fl = spritePlane('flame', 1.55, 2);
+    const body = spritePlane('rocket', 1.55, 3);
+    fl.position.y = ROCKET_SPR_OFS; body.position.y = ROCKET_SPR_OFS;
+    rocket.add(fl); rocket.add(body);
+    rocket.userData.flame = fl;
+    rocket.userData.spriteMode = true;
+    return;
+  }
+  // заглушка, если спрайтов нет
+  const flc=new THREE.Mesh(new THREE.ConeGeometry(0.1,0.28,8), new THREE.MeshBasicMaterial({color:new THREE.Color(ORANGE)}));
+  flc.rotation.x=Math.PI;
+  rocket.userData.flame=flc;
+  rocket.userData.spriteMode=false;
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.2,0.5,10), toonMat(CREAM));
+  addOutline(body, INK, 1.12); rocket.add(body);
+  const nose=new THREE.Mesh(new THREE.ConeGeometry(0.16,0.3,10), toonMat(ORANGE));
+  addOutline(nose, INK, 1.12); nose.position.y=0.4; rocket.add(nose);
+  const fin1=new THREE.Mesh(new THREE.BoxGeometry(0.34,0.18,0.05), toonMat(ORANGE));
+  addOutline(fin1, INK, 1.1); fin1.position.y=-0.22; rocket.add(fin1);
+  flc.position.y=-0.42; rocket.add(flc);
+}
+scene.add(rocket);
+
+/* след ракеты — тающая оранжевая линия */
+const TRAIL_N=26;
+const trailGeo=new THREE.BufferGeometry();
+const trailPos=new Float32Array(TRAIL_N*3);
+trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPos,3));
+const trail=new THREE.Line(trailGeo, new THREE.LineBasicMaterial({color:new THREE.Color(ORANGE), transparent:true, opacity:0.5}));
+scene.add(trail);
+const trailPts=[];
+
+/* пунктир-предпросмотр касательной */
+const prevGeo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+const preview=new THREE.Line(prevGeo, new THREE.LineDashedMaterial({color:new THREE.Color(INK), dashSize:0.26, gapSize:0.2, transparent:true, opacity:0.85}));
+scene.add(preview);
+
+/* ---------- Состояние ---------- */
+/* mode: 'orbit' | 'fly' | 'tug' */
+const S = {
+  mode:'orbit', planet:MAP[0], angle:-Math.PI/2, dir:1,
+  pos:new THREE.Vector3(), vel:new THREE.Vector3(),
+  flyT:0, recapture:0, lastPlanet:null,
+  tugFrom:new THREE.Vector3(), tugT:0,
+  stars:0, releases:0, tugs:0, t0:0, finished:false, started:false,
+  hearts:3, inv:0, over:false, tapped:false,
+};
+const comets=[]; let cometT=6.0;
+function orbitPos(p, a){ return new THREE.Vector3(p.x+Math.cos(a)*p.r, p.y+Math.sin(a)*p.r, 0); }
+
+/* ---------- Ввод ---------- */
+function release(){
+  if (S.mode!=='orbit') return;
+  if (!S.tapped){ S.tapped=true; document.getElementById('tapHint').style.display='none'; }
+  const p=S.planet;
+  /* касательная в направлении обхода */
+  const tx=-Math.sin(S.angle)*S.dir, ty=Math.cos(S.angle)*S.dir;
+  S.pos.copy(orbitPos(p,S.angle));
+  S.vel.set(tx*FLY_SPEED, ty*FLY_SPEED, 0);
+  S.mode='fly'; S.flyT=0; S.recapture=RECAPTURE_T; S.lastPlanet=p;
+  S.releases++;
+}
+let assetsReady=false;
+function startGame(){
+  if (S.started || !assetsReady) return;
+  S.started=true; S.t0=performance.now(); heartsHUD();
+  document.getElementById('tapHint').style.display='block';
+  document.getElementById('startOv').style.display='none';
+}
+addEventListener('pointerdown', (e)=>{
+  if (e.target && e.target.closest && e.target.closest('button')) return; // кнопки HUD — не игровой тап
+  if (S.over) return;
+  if (!S.started){ startGame(); return; }
+  release();
+}, {passive:true});
+addEventListener('keydown', e=>{ if(e.code==='Space' && !S.over){ if(!S.started) startGame(); else release(); } });
+
+loadAssets(()=>{
+  buildRocket(); buildPlanets(); buildStars(); buildAmbient();
+  assetsReady=true;
+  document.getElementById('loadBar').style.display='none';
+  document.getElementById('loadTxt').style.display='none';
+  document.getElementById('ovGo').style.display='inline-block';
+});
+
+/* ---------- HUD ---------- */
+function heartsHUD(){
+  document.getElementById('hearts').textContent =
+    '❤️'.repeat(Math.max(0,Math.min(3,S.hearts))) + '🖤'.repeat(Math.max(0,3-S.hearts));
+}
+function flashFx(){ const f=document.getElementById('flash'); f.style.opacity=0.3; setTimeout(()=>f.style.opacity=0,130); }
+function hitRocket(){
+  if (S.inv>0 || S.over) return;
+  S.hearts--; S.inv=1.6; heartsHUD(); flashFx();
+  if (S.hearts<=0){
+    S.over=true;
+    score = S.stars*5;
+    try{ window.parent.postMessage({type:'SUBMIT_SCORE', score:score},'*'); }catch(e){}
+    document.getElementById('loseScore').textContent = '⭐ '+S.stars+'/5';
+    setTimeout(()=>{ document.getElementById('loseOv').style.display='flex'; }, 500);
+    return;
+  }
+  if (S.mode==='fly'){ // сбит в полёте — буксир спасает бесплатно
+    S.mode='tug'; S.tugT=0; S.tugFrom.copy(S.pos); S.tugs++;
+    const p=S.planet;
+    S.angle=Math.atan2(S.pos.y-p.y, S.pos.x-p.x);
+  }
+}
+/* -------- кометы-помехи: телеграф пунктиром, затем пролёт -------- */
+function spawnComet(){
+  const dir = Math.random()<0.5 ? 1 : -1;
+  const y0 = camY + (Math.random()*5-2);
+  const x0 = -dir*(HALF_W+1.6);
+  const vx = dir*(3.0+Math.random()*1.3);
+  const vy = (Math.random()*1.2-0.7);
+  const spr = spritePlane('comet', 0.9, 3);
+  if (spr){ if (dir<0) spr.scale.x*=-1; spr.visible=false; scene.add(spr); }
+  const pts=[new THREE.Vector3(x0,y0,0.2), new THREE.Vector3(x0+vx*4.5, y0+vy*4.5, 0.2)];
+  const lgeo=new THREE.BufferGeometry().setFromPoints(pts);
+  const line=new THREE.Line(lgeo, new THREE.LineDashedMaterial({color:new THREE.Color('#C0473A'),
+    dashSize:0.22, gapSize:0.18, transparent:true, opacity:0.9}));
+  line.computeLineDistances(); scene.add(line);
+  comets.push({x:x0,y:y0,vx,vy,spr,line,warn:0.95,alive:true});
+}
+function updateComets(dt, et){
+  if (S.started && !S.over && S.pos.y>7.5){
+    cometT-=dt;
+    if (cometT<=0 && comets.length<2){ spawnComet(); cometT=4.2+Math.random()*2.4; }
+  }
+  for (let i=comets.length-1;i>=0;i--){
+    const c=comets[i];
+    if (c.warn>0){
+      c.warn-=dt;
+      c.line.material.opacity = 0.35+0.55*Math.abs(Math.sin(et*10));
+      if (c.warn<=0){ scene.remove(c.line); if(c.spr) c.spr.visible=true; }
+      continue;
+    }
+    c.x+=c.vx*dt; c.y+=c.vy*dt;
+    if (c.spr){ c.spr.position.set(c.x,c.y,0.2); c.spr.rotation.z=Math.atan2(c.vy,c.vx*(c.vx<0?-1:1))*(c.vx<0?-1:1); }
+    if (Math.hypot(c.x-S.pos.x, c.y-S.pos.y) < 0.62) hitRocket();
+    if (Math.abs(c.x)>HALF_W+2.5 || Math.abs(c.y-camY)>halfH+4){
+      if (c.spr) scene.remove(c.spr);
+      comets.splice(i,1);
+    }
+  }
+}
+function toast(html, ms){
+  const t=document.getElementById('toast');
+  t.innerHTML=html; t.classList.add('show');
+  clearTimeout(toast._h); toast._h=setTimeout(()=>t.classList.remove('show'), ms||1800);
+}
+
+/* ---------- Захват орбиты ---------- */
+function tryCapture(){
+  for (const p of MAP){
+    if (p===S.lastPlanet && S.recapture>0) continue;
+    const dx=S.pos.x-p.x, dy=S.pos.y-p.y;
+    const d=Math.hypot(dx,dy);
+    if (Math.abs(d-p.r) < CAPTURE_BAND){
+      /* пересекли кольцо — цепляемся, сохраняя направление обхода */
+      S.mode='orbit'; S.planet=p;
+      S.angle=Math.atan2(dy,dx);
+      const cross = dx*S.vel.y - dy*S.vel.x;
+      S.dir = cross>=0 ? 1 : -1;
+      if (p.finish && !S.finished){
+        S.finished=true;
+        score = S.stars*5;
+        try{ window.parent.postMessage({type:'SUBMIT_SCORE', score:score},'*'); }catch(e){} // финальный сабмит
+        const secs=Math.round((performance.now()-S.t0)/1000);
+        toast(L.end+'<br>⭐ '+S.stars+'/5 · '+L.transfers+': '+S.releases+' · '+L.tugs+': '+S.tugs+'<br>'+L.time+': '+secs+' s', 6000);
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+/* ---------- Главный цикл ---------- */
+let prevT=0, camY=2;
+function tick(t){
+  requestAnimationFrame(tick);
+  const dt=Math.min(0.033,(t-prevT)/1000||0.016); prevT=t;
+  const et=t/1000;
+
+  updateComets(dt, et);
+  if (S.inv>0){ S.inv-=dt; rocket.visible = Math.floor(et*13)%2===0; } else rocket.visible=true;
+  if (S.started && !S.over && !document.hidden){
+    if (S.mode==='orbit'){
+      const p=S.planet;
+      S.angle += p.spd*S.dir*dt;
+      S.pos.copy(orbitPos(p,S.angle));
+      if (S.recapture>0) S.recapture-=dt;
+    }
+    else if (S.mode==='fly'){
+      S.flyT+=dt;
+      if (S.recapture>0) S.recapture-=dt; else S.lastPlanet=null;
+      S.pos.x+=S.vel.x*dt; S.pos.y+=S.vel.y*dt;
+      if (!tryCapture()){
+        const off = Math.abs(S.pos.x)>HALF_W+1.2 || S.pos.y<camY-halfH-1.5 || S.pos.y>MAP_TOP+4;
+        if (S.flyT>TUG_AFTER || off){
+          /* буксир: мягкий возврат на последнюю орбиту */
+          S.mode='tug'; S.tugT=0; S.tugFrom.copy(S.pos); S.tugs++;
+          const p=S.planet;
+          S.angle=Math.atan2(S.pos.y-p.y, S.pos.x-p.x); /* ближайшая точка кольца */
+        }
+      }
+    }
+    else if (S.mode==='tug'){
+      S.tugT+=dt;
+      if (tugSpr){
+        tugSpr.visible = true;
+        tugSpr.position.set(S.pos.x+0.42, S.pos.y+0.58+Math.sin(et*7)*0.05, 0.4);
+      }
+      const k=Math.min(1, S.tugT/TUG_TIME);
+      const ease=k*k*(3-2*k);
+      const target=orbitPos(S.planet,S.angle);
+      S.pos.lerpVectors(S.tugFrom, target, ease);
+      if (k>=1){ S.mode='orbit'; S.recapture=0; if(tugSpr) tugSpr.visible=false; }
+    }
+
+    /* лёгкое вращение glb-планет */
+    for (const p of MAP) if (p.spin) p.spin.rotation.z += dt*0.08;
+
+    /* звёзды */
+    for (const st of starObjs){
+      if (st.taken) continue;
+      const ps=st.baseS*(1+0.14*Math.sin(et*4+st.i)); st.m.scale.set(ps,ps,st.m.scale.z);
+      st.m.rotation.z += dt*1.2;
+      if (Math.hypot(S.pos.x-st.x, S.pos.y-st.y) < 0.55){
+        st.taken=true; st.m.visible=false;
+        S.stars++; score=S.stars*5;
+        document.getElementById('starPill').textContent='⭐ '+S.stars+'/5';
+        submitScore(); /* накопительно после каждой звезды — по документу STTM */
+      }
+    }
+  }
+
+  /* ракета: позиция и нос по ходу движения */
+  rocket.position.copy(S.pos);
+  let heading;
+  if (S.mode==='orbit'){ const tx=-Math.sin(S.angle)*S.dir, ty=Math.cos(S.angle)*S.dir; heading=Math.atan2(ty,tx); }
+  else heading=Math.atan2(S.vel.y,S.vel.x);
+  if (S.mode!=='tug') rocket.rotation.z = heading - Math.PI/2 + (rocket.userData.spriteMode ? ROCKET_TILT : 0);
+  const fl=rocket.userData.flame;
+  if (fl){
+    if (rocket.userData.spriteMode){
+      fl.material.opacity = 0.82+0.18*Math.sin(et*24);
+      const fs = 1+0.03*Math.sin(et*21); fl.scale.set(fs,fs,1);
+    } else fl.scale.y=0.8+Math.sin(et*26)*0.25;
+    fl.visible = S.mode!=='tug';
+  }
+
+  /* пунктир-предпросмотр */
+  preview.visible = S.mode==='orbit';
+  if (preview.visible){
+    const tx=-Math.sin(S.angle)*S.dir, ty=Math.cos(S.angle)*S.dir;
+    const a=S.pos, b=new THREE.Vector3(a.x+tx*PREVIEW_LEN, a.y+ty*PREVIEW_LEN, 0);
+    preview.geometry.setFromPoints([a,b]);
+    preview.computeLineDistances();
+  }
+
+  /* след */
+  trailPts.push({x:S.pos.x,y:S.pos.y});
+  if (trailPts.length>TRAIL_N) trailPts.shift();
+  for(let i=0;i<TRAIL_N;i++){
+    const p=trailPts[Math.max(0,trailPts.length-1-i)]||trailPts[0]||{x:S.pos.x,y:S.pos.y};
+    trailPos[i*3]=p.x; trailPos[i*3+1]=p.y; trailPos[i*3+2]=-0.1;
+  }
+  trailGeo.attributes.position.needsUpdate=true;
+
+  /* камера следует вверх, фон-градиент едет */
+  camY += (S.pos.y+1.2-camY)*Math.min(1,dt*CAM_LERP);
+  camY = Math.max(2, Math.min(MAP_TOP-1, camY));
+  camera.position.set(0, camY, 20);
+  const prog = Math.max(0, Math.min(1, camY/MAP_TOP));
+  document.getElementById('sky').style.transform = 'translateY('+(-75*prog)+'%)';
+  document.getElementById('hint').className = prog>0.55 ? 'space' : '';
+
+  renderer.render(scene,camera);
+}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
