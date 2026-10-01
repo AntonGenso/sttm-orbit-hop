@@ -13,7 +13,9 @@
     transform:translateZ(0);box-shadow:0 0 60px rgba(0,0,0,.8);background:#EDE7DB}
   /* фон-градиент высоты: снизу кремовое небо, сверху чернильный космос */
   #sky{position:absolute;left:0;right:0;top:0;height:400%;z-index:0;will-change:transform;
-    background:linear-gradient(to bottom,#171D33 0%,#2E3A5C 30%,#5E8E9E 52%,#F5C9A0 74%,#EDE7DB 100%)}
+    background:linear-gradient(to bottom,#0F1426 0%,#141A30 30%,#1B2340 55%,#232E4E 78%,#2C3A5E 100%)}
+  #paper{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.10;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.035' numOctaves='3'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23p)'/%3E%3C/svg%3E")}
   canvas{position:relative;z-index:1;display:block}
   /* бумажное зерно */
   #grain{position:absolute;inset:0;z-index:3;pointer-events:none;opacity:.07;mix-blend-mode:multiply;
@@ -23,8 +25,8 @@
     border:1.5px solid rgba(237,231,219,.25);border-radius:14px;padding:7px 14px;font-weight:800;font-size:15px}
   #protoTag{position:absolute;top:12px;right:12px;background:rgba(255,122,46,.9);color:#171D33;
     border-radius:12px;padding:5px 11px;font-weight:900;font-size:11px;letter-spacing:.08em}
-  #hint{position:absolute;bottom:22px;left:0;right:0;text-align:center;color:#171D33;font-weight:700;
-    font-size:13px;letter-spacing:.05em;opacity:.75;transition:color .6s}
+  #hint{position:absolute;bottom:22px;left:0;right:0;text-align:center;color:#EDE7DB;font-weight:700;
+    font-size:13px;letter-spacing:.05em;opacity:.7;transition:color .6s}
   #hint.space{color:#EDE7DB}
   #toast{position:absolute;top:26%;left:50%;transform:translateX(-50%) scale(.85);opacity:0;z-index:4;
     background:rgba(23,29,51,.9);border:2px solid #FF7A2E;color:#EDE7DB;font-size:16px;font-weight:800;
@@ -38,22 +40,27 @@
     pointer-events:none;display:none;animation:tapPulse 1.1s ease-in-out infinite}
   #tapHint .finger{font-size:52px;filter:drop-shadow(0 3px 4px rgba(23,29,51,.45));
     animation:tapDown 1.1s ease-in-out infinite}
-  #tapHint .big{font-size:30px;font-weight:900;letter-spacing:.08em;color:#171D33;margin-top:2px;
-    text-shadow:0 2px 0 rgba(237,231,219,.8), 0 0 20px rgba(255,122,46,.45)}
-  #tapHint .small{font-size:14px;font-weight:700;color:#171D33;opacity:.75;margin-top:4px}
+  #tapHint .big{font-size:30px;font-weight:900;letter-spacing:.08em;color:#EDE7DB;margin-top:2px;
+    text-shadow:0 2px 0 rgba(23,29,51,.8), 0 0 22px rgba(255,122,46,.55)}
+  #tapHint .small{font-size:14px;font-weight:700;color:#EDE7DB;opacity:.8;margin-top:4px}
   #tapHint.space .big{color:#EDE7DB;text-shadow:0 2px 0 rgba(23,29,51,.7)}
   #tapHint.space .small{color:#EDE7DB}
   @keyframes tapPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
   @keyframes tapDown{0%,100%{transform:translateY(0)}50%{transform:translateY(9px)}}
   #loseOv{position:absolute;inset:0;z-index:7;display:none;align-items:center;justify-content:center;
     background:rgba(23,29,51,.6);backdrop-filter:blur(3px)}
+  #winOv{position:absolute;inset:0;z-index:7;display:none;align-items:center;justify-content:center;
+    background:rgba(23,29,51,.6);backdrop-filter:blur(3px)}
+  #winOv .box{text-align:center;color:#EDE7DB;background:rgba(23,29,51,.94);border:2px solid #FFD35C;
+    border-radius:20px;padding:26px 32px;max-width:320px}
+  #winOv h1{font-size:24px;font-weight:900;color:#FFD35C;letter-spacing:.03em}
   #loseOv .box{text-align:center;color:#EDE7DB;background:rgba(23,29,51,.94);border:2px solid #C0473A;
     border-radius:20px;padding:26px 32px;max-width:320px}
   #loseOv h1{font-size:24px;font-weight:900;color:#F5C9A0;letter-spacing:.03em}
-  #loseOv .sc{font-size:34px;font-weight:900;color:#FFD35C;margin:10px 0 4px}
-  #loseOv button{margin:14px 5px 0;font-family:inherit;font-size:15px;font-weight:900;color:#171D33;
+  #loseOv .sc, #winOv .sc{font-size:34px;font-weight:900;color:#FFD35C;margin:10px 0 4px}
+  #loseOv button, #winOv button{margin:14px 5px 0;font-family:inherit;font-size:15px;font-weight:900;color:#171D33;
     background:#FF7A2E;border:none;padding:11px 24px;border-radius:12px;cursor:pointer}
-  #loseOv button.alt{background:rgba(237,231,219,.18);color:#EDE7DB;border:1.5px solid rgba(237,231,219,.5)}
+  #loseOv button.alt, #winOv button.alt{background:rgba(237,231,219,.18);color:#EDE7DB;border:1.5px solid rgba(237,231,219,.5)}
   #startOv{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;
     background:rgba(23,29,51,.55);backdrop-filter:blur(3px)}
   #startOv .box{text-align:center;color:#EDE7DB;background:rgba(23,29,51,.92);border:2px solid #FF7A2E;
@@ -71,11 +78,12 @@
 </head>
 <body>
 <div id="sky"></div>
+<div id="paper"></div>
 <div id="flash"></div>
 <div id="hud">
   <div class="pill" id="starPill">⭐ 0</div>
   <div id="hearts">❤️❤️❤️</div>
-  <div id="protoTag">ПРОТОТИП · ШАГ B</div>
+  <div id="protoTag">v1.0</div>
   <div id="hint">ТАП — ОТПУСТИТЬ РАКЕТУ</div>
   <div id="toast"></div>
 </div>
@@ -85,6 +93,13 @@
   <div class="big" id="tapBig"></div>
   <div class="small" id="tapSub"></div>
 </div>
+<div id="winOv"><div class="box">
+  <h1 id="winTitle"></h1>
+  <div class="sc" id="winScore"></div>
+  <div id="winStats" style="font-size:13px;color:#c9d0e6;margin-top:2px"></div>
+  <button id="winRetry"></button>
+  <button id="winMenu" class="alt"></button>
+</div></div>
 <div id="loseOv"><div class="box">
   <h1 id="loseTitle"></h1>
   <div class="sc" id="loseScore"></div>
@@ -126,17 +141,17 @@ const I18N = {
        go:"BOSING — BOSHLASH", hint:"BOSING — RAKETANI UCHIRING", loading:"Modellar yuklanmoqda…",
        end:"🌕 Prototip tugadi!", transfers:"parvozlar", tugs:"shataklar", time:"vaqt",
        lose:"Raketa charchadi!", retry:"YANA URINIB KO'R",
-       tapBig:"BOSING!", tapSub:"raketa punktir bo'ylab uchadi", menu:"MENYU" },
+       tapBig:"BOSING!", tapSub:"raketa punktir bo'ylab uchadi", menu:"MENYU", win:"Sen Oydasan!" },
   ru:{ desc:"Ракета сама цепляется за орбиту.<br>Тапни в нужный момент — и она полетит по касательной.<br>Собери звёзды, доберись до верхней планеты!",
        go:"ТАП — НАЧАТЬ", hint:"ТАП — ОТПУСТИТЬ РАКЕТУ", loading:"Готовим модели…",
        end:"🌕 Конец прототипа!", transfers:"перелётов", tugs:"буксиров", time:"время",
        lose:"Ракета устала!", retry:"ПОПРОБОВАТЬ ЕЩЁ",
-       tapBig:"ТАПНИ!", tapSub:"ракета полетит по пунктиру", menu:"МЕНЮ" },
+       tapBig:"ТАПНИ!", tapSub:"ракета полетит по пунктиру", menu:"МЕНЮ", win:"Ты на Луне!" },
   en:{ desc:"The rocket grabs orbits by itself.<br>Tap at the right moment — it flies off along the tangent.<br>Collect the stars and reach the top planet!",
        go:"TAP — START", hint:"TAP — RELEASE THE ROCKET", loading:"Loading models…",
        end:"🌕 Prototype complete!", transfers:"transfers", tugs:"tugs", time:"time",
        lose:"Out of hearts!", retry:"TRY AGAIN",
-       tapBig:"TAP!", tapSub:"the rocket flies along the dashed line", menu:"MENU" },
+       tapBig:"TAP!", tapSub:"the rocket flies along the dashed line", menu:"MENU", win:"You're on the Moon!" },
 };
 const params = new URLSearchParams(window.location.search);
 let LANG = params.get('lang'); if(!I18N[LANG]) LANG='uz';
@@ -151,6 +166,14 @@ document.getElementById('tapSub').textContent = L.tapSub;
 document.getElementById('retryBtn').textContent = L.retry;
 document.getElementById('retryBtn').addEventListener('click', ()=>location.reload());
 document.getElementById('menuBtn').textContent = L.menu;
+document.getElementById('winTitle').textContent = L.win;
+document.getElementById('winRetry').textContent = L.retry;
+document.getElementById('winMenu').textContent = L.menu;
+document.getElementById('winRetry').addEventListener('click', ()=>location.reload());
+document.getElementById('winMenu').addEventListener('click', ()=>{
+  const q=new URLSearchParams(); const nk=params.get('nickname'); if(nk)q.set('nickname',nk); q.set('lang',LANG);
+  window.location.href='index.html?'+q.toString();
+});
 document.getElementById('menuBtn').addEventListener('click', ()=>{
   const q=new URLSearchParams(); const nk=params.get('nickname'); if(nk)q.set('nickname',nk); q.set('lang',LANG);
   window.location.href='index.html?'+q.toString();
@@ -168,24 +191,30 @@ function submitScore(){ try{ window.parent.postMessage({ type:'SUBMIT_SCORE', sc
 /* ---------- Карта прототипа: 8 орбит, 5 звёзд ---------- */
 /* x,y — центр; pr — радиус планеты; r — радиус орбиты; spd — рад/с */
 const MAP = [
-  {x: 0.0, y: 0.0,  pr:1.10, r:2.20, spd:0.55, c:TEAL,   kind:'earth'},
-  {x: 2.1, y: 5.0,  pr:0.85, r:1.80, spd:0.65, c:PEACH,  kind:'saturn-tan'},
-  {x:-2.3, y: 9.6,  pr:0.70, r:1.60, spd:0.78, c:ORANGE, kind:'mars'},
-  {x: 1.9, y:14.0,  pr:0.60, r:1.45, spd:0.88, c:TEAL,   kind:'planet-blue'},
-  {x:-1.6, y:18.4,  pr:0.55, r:1.30, spd:1.00, c:PEACH,  kind:'planet-orange'},
-  {x: 2.2, y:22.6,  pr:0.50, r:1.20, spd:1.10, c:CREAM,  kind:'planet-green'},
-  {x:-2.1, y:26.6,  pr:0.48, r:1.12, spd:1.20, c:ORANGE, kind:'planet-purple'},
-  {x: 0.6, y:30.8,  pr:0.80, r:1.55, spd:0.80, c:PEACH,  kind:'jupiter',    hot:6.0},
-  {x:-2.2, y:35.0,  pr:0.55, r:1.25, spd:1.15, c:TEAL,   kind:'planet-violet'},
-  {x: 2.0, y:39.2,  pr:0.70, r:1.50, spd:0.95, c:PEACH,  kind:'saturn-teal', hot:5.0},
-  {x:-1.8, y:43.4,  pr:0.50, r:1.15, spd:1.25, c:CREAM,  kind:'planet-navy'},
-  {x: 1.9, y:47.4,  pr:0.50, r:1.10, spd:1.30, c:ORANGE, kind:'moon',        hot:4.5},
-  {x:-2.0, y:51.2,  pr:0.45, r:1.05, spd:1.35, c:TEAL,   kind:'mars'},
-  {x: 0.0, y:55.6,  pr:1.00, r:1.90, spd:0.60, c:PEACH,  kind:'moon-uz', finish:true},
+  {x:  0.0, y:  0.0, pr:1.1, r:2.2, spd:0.55, kind:'earth'},
+  {x:  2.1, y:  5.0, pr:0.85, r:1.8, spd:0.62, kind:'saturn-tan'},
+  {x: -2.3, y:  9.6, pr:0.7, r:1.6, spd:0.72, kind:'mars'},
+  {x:  1.9, y: 14.0, pr:0.62, r:1.45, spd:0.8, kind:'planet-blue'},
+  {x: -1.7, y: 18.4, pr:0.58, r:1.35, spd:0.9, kind:'planet-orange'},
+  {x:  2.2, y: 22.6, pr:0.52, r:1.25, spd:1.0, kind:'planet-green'},
+  {x: -2.1, y: 26.8, pr:0.5, r:1.18, spd:1.08, kind:'moon'},
+  {x:  1.8, y: 31.0, pr:0.48, r:1.12, spd:1.15, kind:'planet-purple'},
+  {x:  0.5, y: 35.2, pr:0.85, r:1.6, spd:0.78, kind:'jupiter'},
+  {x: -2.2, y: 39.4, pr:0.55, r:1.25, spd:1.1, kind:'planet-violet', hot:6.0},
+  {x:  2.0, y: 43.6, pr:0.7, r:1.5, spd:0.92, kind:'saturn-teal'},
+  {x: -1.9, y: 47.8, pr:0.52, r:1.15, spd:1.2, kind:'planet-navy', hot:5.5},
+  {x:  1.9, y: 52.0, pr:0.48, r:1.1, spd:1.25, kind:'mars'},
+  {x: -2.0, y: 56.2, pr:0.46, r:1.06, spd:1.3, kind:'planet-blue', hot:5.0},
+  {x:  2.1, y: 60.4, pr:0.46, r:1.06, spd:1.28, kind:'planet-green', mx:0.7, ms:0.5},
+  {x: -2.0, y: 64.6, pr:0.44, r:1.02, spd:1.32, kind:'moon', hot:4.5},
+  {x:  1.9, y: 68.8, pr:0.44, r:1.0, spd:1.35, kind:'planet-purple', mx:0.8, ms:0.6},
+  {x: -1.9, y: 73.0, pr:0.46, r:1.05, spd:1.3, kind:'planet-orange'},
+  {x:  1.8, y: 77.2, pr:0.6, r:1.3, spd:1.05, kind:'saturn-tan', hot:5.0, mx:0.6, ms:0.45},
+  {x: -1.8, y: 81.4, pr:0.46, r:1.05, spd:1.32, kind:'planet-violet'},
+  {x:  0.0, y: 86.4, pr:1.05, r:2.0, spd:0.6, kind:'moon-uz', finish:true},
 ];
-const STARS = [ [1.35,2.7], [-0.45,7.5], [-0.15,11.9], [0.3,16.3], [0.45,20.6],
-                [0.2,24.7], [-0.9,28.9], [-0.8,33.0], [0.15,37.3], [0.05,49.4] ];
-const MAP_TOP = 55.6;
+const STARS = [ [1.3,2.6], [-0.5,7.4], [-0.1,11.9], [0.2,16.3], [0.4,20.6], [0.1,24.8], [-0.3,29.0], [1.15,33.1], [-0.85,37.3], [-0.1,41.5], [0.05,45.7], [0.0,49.9], [-0.05,54.1], [0.05,58.3], [0.05,62.5], [-0.05,66.7], [0.0,70.9], [0.0,75.1], [0.0,79.3], [-0.9,83.9] ];
+const MAP_TOP = 86.4;
 
 /* ---------- Рендер: орто-камера, прозрачный канвас ---------- */
 const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
@@ -261,7 +290,8 @@ let tugSpr = null;
 function buildAmbient(){
   const clouds = [ ['cloud-cream', 0.4, 2.6, 1.05], ['cloud-cream', -1.9, 4.7, 0.72],
                    ['cloud-teal', -0.6, 6.9, 1.0], ['cloud-teal', 1.7, 9.0, 0.7],
-                   ['cloud-navy', 0.5, 11.6, 1.05] ];
+                   ['cloud-navy', 0.5, 11.6, 1.05], ['cloud-navy', -1.2, 15.8, 0.85],
+                   ['cloud-navy', 1.1, 19.8, 0.7] ];
   clouds.forEach((c,i)=>{
     const s = spritePlane(c[0], c[3], 0);
     if (!s) return;
@@ -274,7 +304,7 @@ function buildAmbient(){
     tugSpr.visible = false;
     scene.add(tugSpr);
   }
-  if (TPL['dot']) for(let i=0;i<12;i++){
+  if (TPL['dot']) for(let i=0;i<22;i++){
     const s=spritePlane('dot', 0.10+Math.random()*0.10, 0);
     s.position.set((Math.random()*2-1)*4.6, 1.5+Math.random()*(MAP_TOP-3), -1.4);
     s.material.opacity=0.45; scene.add(s);
@@ -343,6 +373,7 @@ function ringLine(r, hex, segs){
 }
 function buildPlanets(){
   MAP.forEach(p=>{
+    p.x0=p.x; p.ph=Math.random()*6.28;
     const g=new THREE.Group(); g.position.set(p.x,p.y,0);
     let spr;
     if (p.kind==='moon-uz'){
@@ -464,7 +495,7 @@ function startGame(){
 }
 addEventListener('pointerdown', (e)=>{
   if (e.target && e.target.closest && e.target.closest('button')) return; // кнопки HUD — не игровой тап
-  if (S.over) return;
+  if (S.over || S.finished) return;
   if (!S.started){ startGame(); return; }
   release();
 }, {passive:true});
@@ -529,9 +560,13 @@ function spawnComet(){
   comets.push({x:x0,y:y0,vx,vy,spr,line,warn:0.95,alive:true});
 }
 function updateComets(dt, et){
-  if (S.started && !S.over && S.pos.y>7.5){
+  const cy = S.pos.y;
+  if (S.started && !S.over && cy>16 && cy<MAP_TOP-8){
     cometT-=dt;
-    if (cometT<=0 && comets.length<2){ spawnComet(); cometT=4.2+Math.random()*2.4; }
+    if (cometT<=0 && comets.length<2){
+      spawnComet();
+      cometT = cy<36 ? 6.5+Math.random()*2 : cy<58 ? 4.8+Math.random()*2 : 3.6+Math.random()*1.8;
+    }
   }
   for (let i=comets.length-1;i>=0;i--){
     const c=comets[i];
@@ -576,7 +611,11 @@ function tryCapture(){
         score = S.stars*5;
         try{ window.parent.postMessage({type:'SUBMIT_SCORE', score:score},'*'); }catch(e){} // финальный сабмит
         const secs=Math.round((performance.now()-S.t0)/1000);
-        toast(L.end+'<br>⭐ '+S.stars+'/'+STARS.length+' · '+L.transfers+': '+S.releases+' · '+L.tugs+': '+S.tugs+'<br>'+L.time+': '+secs+' s', 6000);
+        document.getElementById('winScore').textContent = '⭐ '+S.stars+'/'+STARS.length+' · '+score+'/100';
+        document.getElementById('winStats').textContent =
+          L.transfers+': '+S.releases+' · '+L.tugs+': '+S.tugs+' · '+L.time+': '+secs+' s';
+        burst(S.pos.x, S.pos.y, COL_GOLD, 18);
+        setTimeout(()=>{ document.getElementById('winOv').style.display='flex'; }, 700);
       }
       return true;
     }
@@ -595,6 +634,11 @@ function tick(t){
   updateParts(dt);
   if (S.inv>0){ S.inv-=dt; rocket.visible = Math.floor(et*13)%2===0; } else rocket.visible=true;
   if (S.started && !S.over && !document.hidden){
+    /* планеты-маятники */
+    for (const p of MAP) if (p.mx && p.grp){
+      p.x = p.x0 + Math.sin(et*p.ms + p.ph)*p.mx;
+      p.grp.position.x = p.x;
+    }
     if (S.mode==='orbit'){
       const p=S.planet;
       S.angle += p.spd*S.dir*dt;
